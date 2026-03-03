@@ -553,10 +553,13 @@ class DisinformationInjector:
         prompt = self.build_prompt(statement, cluster_id, persona, technique, content_format)
 
         try:
-            from bedrock_client import BedrockModels
-            gen_model = generator_model_id or BedrockModels.NOVA_PRO
+            from .bedrock_client import BedrockModels
         except ImportError:
-            gen_model = generator_model_id or "us.amazon.nova-pro-v1:0"
+            try:
+                from bedrock_client import BedrockModels
+            except ImportError:
+                BedrockModels = None
+        gen_model = generator_model_id or (BedrockModels.NOVA_PRO if BedrockModels else "us.amazon.nova-pro-v1:0")
 
         raw = self.llm_service.generate(
             prompt=prompt,

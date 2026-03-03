@@ -17,13 +17,17 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Try to import Bedrock client
+# Try to import Bedrock client (relative for package, absolute for local dev)
 try:
-    from bedrock_client import BedrockClient, BedrockModels, load_env_file
+    from .bedrock_client import BedrockClient, BedrockModels, load_env_file
     BEDROCK_AVAILABLE = True
 except ImportError:
-    BEDROCK_AVAILABLE = False
-    print("Warning: bedrock_client not available. Install dependencies.")
+    try:
+        from bedrock_client import BedrockClient, BedrockModels, load_env_file
+        BEDROCK_AVAILABLE = True
+    except ImportError:
+        BEDROCK_AVAILABLE = False
+        print("Warning: bedrock_client not available. Install dependencies.")
 
 # Load Bedrock credentials
 try:
