@@ -1,0 +1,250 @@
+{
+  "_schema_version": "1.0",
+  "_description": "Unified 5-cluster climate disinformation taxonomy. Merges FLICC (Cook et al. 2022), CARDS v2 (Touzel et al. 2023), and 4D framework.",
+  "_reference": "See research/taxonomy_mapping.md for full framework crosswalk.",
+
+  "clusters": [
+    {
+      "id": "denial",
+      "display_name": "Denial",
+      "description": "Direct factual rejection of established climate science — claiming the phenomenon does not exist, is not occurring, or is not caused by humans.",
+      "color": "#D32F2F",
+      "source_frameworks": ["FLICC: Fake Experts", "CARDS: Trend/Attribution skepticism", "4D: Deny"],
+      "techniques": [
+        {
+          "id": "fake_experts",
+          "name": "Fake Experts",
+          "source": "FLICC",
+          "description": "Citing fringe scientists, think tanks, or misrepresented credentials to suggest scientific disagreement where little exists.",
+          "example_claim": "Thousands of geologists and physicists have signed petitions rejecting the climate consensus.",
+          "counter_talking_point": "97%+ of actively publishing climate scientists agree on human-caused warming. The 'Oregon Petition' was not peer-reviewed and included fake entries."
+        },
+        {
+          "id": "trend_skepticism",
+          "name": "Trend Skepticism",
+          "source": "CARDS",
+          "description": "Denying temperature trends, sea level rise, or other measurable climate indicators.",
+          "example_claim": "Global temperatures haven't risen meaningfully in the last two decades.",
+          "counter_talking_point": "Every decade since the 1980s has been warmer than the previous one. 2015-2024 are all in the top-10 warmest years on record (NOAA, NASA GISS)."
+        },
+        {
+          "id": "attribution_skepticism",
+          "name": "Attribution Skepticism",
+          "source": "CARDS",
+          "description": "Accepting warming but attributing it to natural cycles (solar activity, volcanic eruptions, ocean cycles).",
+          "example_claim": "The Medieval Warm Period was warmer than today, so current warming is just a natural cycle.",
+          "counter_talking_point": "The Medieval Warm Period was regional and cooler globally than today. Solar and volcanic activity cannot account for post-1970s warming patterns (IPCC AR6 WGI Ch. 3)."
+        },
+        {
+          "id": "impersonating_consensus",
+          "name": "Impersonating Consensus",
+          "source": "FLICC",
+          "description": "Falsely claiming that scientific consensus does not exist or is less strong than it is.",
+          "example_claim": "There is no scientific consensus — many reputable scientists remain skeptical.",
+          "counter_talking_point": "Multiple independent studies (Cook 2013, Lynas 2021) find 97-99%+ consensus among publishing climate scientists."
+        }
+      ],
+      "example_priming_questions": [
+        "Many respected geologists actually disagree about whether global temperatures have meaningfully risen over the past century — given that disagreement, should we be so confident in the consensus?",
+        "Given that the Medieval Warm Period appears to have been quite warm without any human CO2, doesn't that suggest current warming could also be natural?",
+        "Isn't it true that thousands of credentialed scientists signed petitions rejecting the climate change consensus?"
+      ]
+    },
+
+    {
+      "id": "doubt_casting",
+      "display_name": "Doubt-Casting",
+      "description": "Undermining confidence in climate science through logical fallacies, impossible standards of proof, or cherry-picked data — without outright rejection.",
+      "color": "#F57C00",
+      "source_frameworks": ["FLICC: Logical Fallacies, Impossible Expectations, Cherry Picking", "CARDS: Science unreliable", "4D: Deceive"],
+      "techniques": [
+        {
+          "id": "cherry_picking",
+          "name": "Cherry Picking",
+          "source": "FLICC",
+          "description": "Highlighting short-term anomalies, local cold events, or outlier studies while ignoring the overall trend.",
+          "example_claim": "1998 was actually warmer than many subsequent years, which contradicts the 'unprecedented warming' narrative.",
+          "counter_talking_point": "1998 was an extreme El Niño year. Using it as a baseline cherry-picks a statistical outlier. The long-term trend continues unabated across all datasets."
+        },
+        {
+          "id": "impossible_expectations",
+          "name": "Impossible Expectations",
+          "source": "FLICC",
+          "description": "Demanding certainty that empirical science cannot provide, or moving the goalposts when evidence is presented.",
+          "example_claim": "Scientists admit there's still uncertainty in climate models, so we can't really know what will happen.",
+          "counter_talking_point": "Uncertainty ranges in climate science mean warming could be higher than central estimates, not lower. All major uncertainty ranges remain above safe levels."
+        },
+        {
+          "id": "false_equivalence",
+          "name": "False Equivalence",
+          "source": "FLICC",
+          "description": "Equating the scientific consensus with fringe skepticism as though they represent equally valid positions.",
+          "example_claim": "There are scientists on both sides of the debate, so it's a matter of interpretation.",
+          "counter_talking_point": "The 'both sides' framing misrepresents a 97%+ vs <3% distribution of expert opinion as a 50/50 debate."
+        },
+        {
+          "id": "model_attacks",
+          "name": "Model Attacks",
+          "source": "CARDS",
+          "description": "Focusing on past model prediction errors to discredit climate modelling broadly.",
+          "example_claim": "Climate models failed to predict the warming pause in the 2000s, so why trust their long-term projections?",
+          "counter_talking_point": "The '2000s pause' was a statistical artifact of cherry-picking 1998 as a start year. The underlying trend continued; updated model ensembles account for natural variability."
+        },
+        {
+          "id": "oversimplification",
+          "name": "Oversimplification",
+          "source": "FLICC",
+          "description": "Reducing complex climate dynamics to a single variable to dismiss the science.",
+          "example_claim": "CO2 is just 0.04% of the atmosphere — how could such a tiny amount change the climate?",
+          "counter_talking_point": "Trace amounts drive major effects (e.g., ozone at 0.0006%). CO2's radiative properties are quantified by basic physics, not correlation alone."
+        }
+      ],
+      "example_priming_questions": [
+        "Given that climate models famously failed to predict the warming slowdown in the 2000s, how much confidence should we really have in their multi-decade projections?",
+        "Since scientists themselves acknowledge significant uncertainty in cloud feedback mechanisms, isn't it premature to base major policy decisions on these models?",
+        "Wasn't 1998 actually warmer than many years that followed? That seems to complicate the 'continuously warming' narrative."
+      ]
+    },
+
+    {
+      "id": "deflection",
+      "display_name": "Deflection",
+      "description": "Accepting climate change but shifting moral or practical responsibility to other actors, nations, or external forces.",
+      "color": "#7B1FA2",
+      "source_frameworks": ["CARDS: Fossil fuels necessary, Individual action can't fix it", "4D: Deflect"],
+      "techniques": [
+        {
+          "id": "other_countries",
+          "name": "Other Countries First",
+          "source": "CARDS",
+          "description": "Pointing to China, India, or developing nations as the 'real' emitters to resist domestic action.",
+          "example_claim": "China emits twice as much CO2 as the US — why should Western countries sacrifice their economies?",
+          "counter_talking_point": "The US and EU are responsible for ~50% of cumulative CO2 since industrialization. China's per-capita emissions remain significantly lower than the US."
+        },
+        {
+          "id": "whataboutism",
+          "name": "Whataboutism",
+          "source": "4D (Deflect)",
+          "description": "Deflecting to unrelated issues or pointing to hypocrisy to avoid engaging with climate action.",
+          "example_claim": "Why should I reduce my footprint when private jets and superyachts exist?",
+          "counter_talking_point": "Individual and systemic action are complementary. Top emitters have outsized responsibility, but this doesn't eliminate the need for systemic policy change."
+        },
+        {
+          "id": "individual_responsibility_transfer",
+          "name": "Individual Responsibility Transfer",
+          "source": "CARDS",
+          "description": "Framing climate change as a problem of individual consumer choices rather than systemic fossil fuel industry practices.",
+          "example_claim": "If people really cared about climate change, they'd stop driving and flying before demanding policy changes.",
+          "counter_talking_point": "The concept of a 'personal carbon footprint' was popularized by BP's 2004 marketing campaign. Systemic change is 100x more impactful than individual action at scale."
+        },
+        {
+          "id": "fossil_fuel_necessity",
+          "name": "Fossil Fuel Necessity",
+          "source": "CARDS",
+          "description": "Arguing that energy security, economic development, or poverty reduction requires continued fossil fuel use.",
+          "example_claim": "Developing nations have a right to use cheap fossil fuels to lift people out of poverty, just as developed nations did.",
+          "counter_talking_point": "The Paris Agreement explicitly provides 'common but differentiated responsibilities' and climate finance for developing nations' clean energy transition."
+        }
+      ],
+      "example_priming_questions": [
+        "Since China now emits twice as much CO2 as the US annually, isn't it unfair to ask Western workers to bear the economic costs of an energy transition?",
+        "When developing nations are still in the middle of industrialization, doesn't demanding they cut emissions effectively condemn their populations to poverty?",
+        "If you really cared about emissions, wouldn't you stop flying and buying new smartphones before advocating for broad policy changes?"
+      ]
+    },
+
+    {
+      "id": "delay",
+      "display_name": "Delay",
+      "description": "Accepting climate change as real but arguing against current or specific action — usually in favor of future technology, gradual transition, or economic caution.",
+      "color": "#0288D1",
+      "source_frameworks": ["CARDS: Climate policies harmful, Clean energy won't work, Solutions unrealistic", "4D: Delay"],
+      "techniques": [
+        {
+          "id": "tech_salvation",
+          "name": "Tech Salvation",
+          "source": "CARDS",
+          "description": "Arguing that future unproven technology (fusion, carbon capture, geoengineering) makes immediate action unnecessary.",
+          "example_claim": "With fusion power and advanced carbon capture almost ready, why lock in expensive renewable infrastructure now?",
+          "counter_talking_point": "Fusion has been '30 years away' for 60 years. Carbon capture cannot remove carbon faster than continued emissions add it at current technology readiness. IPCC requires deep cuts by 2030."
+        },
+        {
+          "id": "economic_cost",
+          "name": "Economic Cost",
+          "source": "CARDS",
+          "description": "Emphasizing transition costs to argue against immediate climate action, often without comparing to the costs of inaction.",
+          "example_claim": "The economic damage from a rapid energy transition would outweigh the benefits for decades.",
+          "counter_talking_point": "Every decade of delay roughly doubles eventual mitigation costs (IPCC AR6). The Stern Review (2006) showed immediate action is far more economical than delayed action."
+        },
+        {
+          "id": "moving_goalposts",
+          "name": "Moving Goalposts",
+          "source": "FLICC",
+          "description": "Requiring impossibly high certainty before acting, then shifting the threshold when evidence is provided.",
+          "example_claim": "Until we have more certainty about exactly how much warming will occur, committing to irreversible policies seems premature.",
+          "counter_talking_point": "Waiting for certainty in a nonlinear system with irreversible tipping points is exactly backwards — precautionary action under uncertainty is the economically rational choice."
+        },
+        {
+          "id": "false_urgency_reversal",
+          "name": "False Urgency Reversal",
+          "source": "4D (Delay)",
+          "description": "Claiming that urgency itself is manufactured to push through poorly-designed policies.",
+          "example_claim": "The constant 'crisis' framing is used to rush through bad policies that wouldn't survive normal democratic scrutiny.",
+          "counter_talking_point": "IPCC AR6 identifies 2030 as a critical milestone; urgency is based on physical science of carbon budgets and tipping points, not political expediency."
+        }
+      ],
+      "example_priming_questions": [
+        "Isn't it wiser to wait for fusion power or next-generation nuclear before committing to costly renewable infrastructure that might become obsolete?",
+        "Given the economic impact on energy-dependent communities, shouldn't we allow a more gradual 40-50 year transition rather than the aggressive timelines being proposed?",
+        "With carbon capture technology advancing so rapidly, do we really need such drastic immediate cuts to emissions?"
+      ]
+    },
+
+    {
+      "id": "conspiracy",
+      "display_name": "Conspiracy",
+      "description": "Framing climate science as a coordinated malicious conspiracy involving governments, scientists, financial interests, or international bodies.",
+      "color": "#5D4037",
+      "source_frameworks": ["FLICC: Conspiracy Theories (all 4 sub-types)", "CARDS: Climate movement is conspiracy", "LOCO corpus"],
+      "techniques": [
+        {
+          "id": "nefarious_intent",
+          "name": "Nefarious Intent",
+          "source": "FLICC",
+          "description": "Attributing climate science to funding incentives or career motivations that produce biased conclusions.",
+          "example_claim": "Climate scientists all depend on government grants — of course they'll produce results that justify more government spending.",
+          "counter_talking_point": "Climate scientists in the US, EU, China, Russia, India, and oil-producing nations all independently reach the same conclusions. If it were funding bias, rival governments would be the first to expose it."
+        },
+        {
+          "id": "global_conspiracy",
+          "name": "Global Conspiracy",
+          "source": "FLICC",
+          "description": "Claiming that international bodies (UN, WEF) are using climate change to advance global governance agendas.",
+          "example_claim": "The Great Reset and climate policy are part of a coordinated WEF agenda to restructure the global economy.",
+          "counter_talking_point": "The IPCC is a scientific body that summarizes peer-reviewed research. The 'Great Reset' is a post-COVID economic recovery initiative unrelated to climate science."
+        },
+        {
+          "id": "coverup",
+          "name": "Coverup",
+          "source": "FLICC",
+          "description": "Claiming that evidence contradicting climate change is being suppressed by institutions.",
+          "example_claim": "The real temperature records show cooling, but they're being adjusted and suppressed by NOAA.",
+          "counter_talking_point": "Temperature datasets from NOAA, NASA, Berkeley Earth, UK Met Office, and Japanese Meteorological Agency are independently maintained and peer-reviewed — all agree."
+        },
+        {
+          "id": "persecution_narrative",
+          "name": "Persecution Narrative",
+          "source": "FLICC",
+          "description": "Framing climate skeptics as silenced, defunded, or attacked for questioning the narrative.",
+          "example_claim": "Scientists who question the consensus are denied funding and have their careers destroyed.",
+          "counter_talking_point": "Skeptical climate papers are regularly published in peer-reviewed journals. Being unable to pass peer review is not the same as persecution."
+        }
+      ],
+      "example_priming_questions": [
+        "It's interesting that virtually all prominent climate scientists receive government funding — doesn't that create an obvious structural incentive to confirm the narrative that justifies more government climate spending?",
+        "When the IPCC is fundamentally a political body appointed by governments rather than an independent scientific institution, how confident can we be in its conclusions?",
+        "Given that the Great Reset explicitly links climate policy to major economic restructuring, is it possible that climate change is being used as a vehicle for broader political goals?"
+      ]
+    }
+  ]
+}

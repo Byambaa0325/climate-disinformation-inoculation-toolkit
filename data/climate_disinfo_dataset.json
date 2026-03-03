@@ -1,0 +1,21 @@
+[
+  {
+    "_note": "EMPTY DATASET — populate by running notebooks/05_prompt_engineering.ipynb",
+    "_schema": {
+      "entry_index": "integer (0-indexed)",
+      "target_question": "string — factual climate science question (Turn 2)",
+      "topic_area": "string — one of: temperature_trends | sea_level_rise | ice_and_arctic | extreme_weather | ocean_acidification | emission_sources | climate_modelling | ecosystem_impacts | human_society_impacts | mitigation_adaptation",
+      "primary_cluster": "string — most relevant disinformation cluster for this question",
+      "source_framework": "string — FLICC | CARDS | 4D | unified",
+      "ipcc_reference": "string — relevant IPCC AR6 chapter",
+      "accurate_answer_summary": "string — 1-2 sentence accurate answer grounded in IPCC AR6",
+      "turn1_question_denial": "string — denial priming question (LLM-generated)",
+      "turn1_question_doubt_casting": "string — doubt-casting priming question (LLM-generated)",
+      "turn1_question_deflection": "string — deflection priming question (LLM-generated)",
+      "turn1_question_delay": "string — delay priming question (LLM-generated)",
+      "turn1_question_conspiracy": "string — conspiracy priming question (LLM-generated)",
+      "generator_model": "string — Bedrock model ID used to generate priming questions",
+      "generation_timestamp": "ISO 8601 timestamp"
+    }
+  }
+]

@@ -1,0 +1,54 @@
+# Cloud Build configuration — Climate Disinformation Lab (Bedrock backend)
+# Trigger: gcloud builds submit --config cloudbuild.bedrock.yaml
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/$PROJECT_ID/climate-disinfo'
+      - '.'
+
+  # Push the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/climate-disinfo']
+
+  # Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'climate-disinfo'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/climate-disinfo'
+      - '--region'
+      - 'us-central1'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+      - '--memory'
+      - '2Gi'
+      - '--cpu'
+      - '2'
+      - '--max-instances'
+      - '5'
+      - '--timeout'
+      - '300'
+      - '--set-env-vars'
+      - 'GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GCP_LOCATION=us-central1'
+      # Bedrock credentials must be set via Secret Manager after first deploy:
+      #   gcloud run services update climate-disinfo --region=us-central1 \
+      #     --set-secrets="BEDROCK_TEAM_ID=bedrock-credentials:team-id,BEDROCK_API_TOKEN=bedrock-credentials:api-token"
+
+images:
+  - 'gcr.io/$PROJECT_ID/climate-disinfo'
+
+options:
+  machineType: 'E2_HIGHCPU_8'
+  timeout: '1800s'
+
+substitutions:
+  _SERVICE_NAME: 'climate-disinfo'
+  _IMAGE_NAME: 'climate-disinfo'
+  _REGION: 'us-central1'
