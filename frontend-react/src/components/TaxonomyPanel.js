@@ -1,10 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Accordion, AccordionSummary, AccordionDetails,
-  Chip, CircularProgress, Alert,
+  Chip, CircularProgress, Alert, Link,
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import axios from 'axios';
+import { getRef } from '../data/references';
+
+// Maps each technique to the reference of its primary source framework
+const TECH_REF = {
+  // FLICC — denial
+  fake_experts:                   'cook2022',
+  impersonating_consensus:        'cook2022',
+  // CARDS — denial
+  trend_skepticism:               'coan2021',
+  attribution_skepticism:         'coan2021',
+  // FLICC — doubt-casting
+  cherry_picking:                 'cook2022',
+  impossible_expectations:        'cook2022',
+  false_equivalence:              'cook2022',
+  oversimplification:             'cook2022',
+  // CARDS — doubt-casting
+  model_attacks:                  'coan2021',
+  // CARDS — deflection
+  other_countries:                'coan2021',
+  whataboutism:                   'coan2021',
+  individual_responsibility_transfer: 'coan2021',
+  fossil_fuel_necessity:          'coan2021',
+  // 4D — delay
+  tech_salvation:                 'lamb2020',
+  economic_cost:                  'lamb2020',
+  moving_goalposts:               'lamb2020',
+  false_urgency_reversal:         'lamb2020',
+  // FLICC — conspiracy
+  nefarious_intent:               'cook2022',
+  global_conspiracy:              'cook2022',
+  coverup:                        'cook2022',
+  persecution_narrative:          'cook2022',
+};
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
@@ -46,7 +79,22 @@ export default function TaxonomyPanel({ apiKey }) {
         Disinformation Taxonomy
       </Typography>
       <Typography variant="caption" sx={{ color: '#4A6550', display: 'block', mb: 2 }}>
-        Unified 5-cluster schema · FLICC · CARDS v2 · 4D Framework
+        Unified 5-cluster schema ·{' '}
+        {[
+          { label: 'FLICC', id: 'cook2022' },
+          { label: 'CARDS', id: 'coan2021' },
+          { label: '4D Framework', id: 'lamb2020' },
+        ].map((fw, i) => {
+          const ref = getRef(fw.id);
+          return (
+            <React.Fragment key={fw.id}>
+              {i > 0 && ' · '}
+              {ref?.url
+                ? <Link href={ref.url} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ color: '#006B3C' }}>{fw.label}</Link>
+                : fw.label}
+            </React.Fragment>
+          );
+        })}
       </Typography>
 
       {clusters.map((cluster) => (
@@ -75,26 +123,51 @@ export default function TaxonomyPanel({ apiKey }) {
               Techniques
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-              {cluster.techniques.map((tech) => (
-                <Chip
-                  key={tech}
-                  label={tech.replace(/_/g, ' ')}
-                  size="small"
-                  variant="outlined"
-                  sx={{ fontSize: '0.65rem', borderColor: CLUSTER_COLORS[cluster.id], color: CLUSTER_COLORS[cluster.id] }}
-                />
-              ))}
+              {cluster.techniques.map((tech) => {
+                const ref = getRef(TECH_REF[tech]);
+                const chip = (
+                  <Chip
+                    key={tech}
+                    label={tech.replace(/_/g, ' ')}
+                    size="small"
+                    variant="outlined"
+                    sx={{
+                      fontSize: '0.65rem',
+                      borderColor: CLUSTER_COLORS[cluster.id],
+                      color: CLUSTER_COLORS[cluster.id],
+                      cursor: ref ? 'pointer' : 'default',
+                      '&:hover': ref ? { backgroundColor: `${CLUSTER_COLORS[cluster.id]}18` } : {},
+                    }}
+                  />
+                );
+                return ref?.url ? (
+                  <Link key={tech} href={ref.url} target="_blank" rel="noopener noreferrer" underline="none" title={ref.shortCite}>
+                    {chip}
+                  </Link>
+                ) : chip;
+              })}
             </Box>
 
             <Typography variant="caption" fontWeight={600} sx={{ display: 'block', mb: 0.5, color: '#1A2E1A' }}>
               Source frameworks
             </Typography>
             <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-              {cluster.source_frameworks.map((fw) => (
-                <Chip key={fw} label={fw} size="small"
-                  sx={{ fontSize: '0.6rem', backgroundColor: '#E8F5EE', color: '#006B3C' }}
-                />
-              ))}
+              {cluster.source_frameworks.map((fw) => {
+                const prefix = fw.split(':')[0].trim();
+                const refId = prefix.startsWith('FLICC') ? 'cook2022' : prefix.startsWith('CARDS') ? 'coan2021' : prefix.startsWith('4D') ? 'lamb2020' : null;
+                const ref = refId ? getRef(refId) : null;
+                return ref?.url ? (
+                  <Link key={fw} href={ref.url} target="_blank" rel="noopener noreferrer" underline="none" title={ref.shortCite}>
+                    <Chip label={fw} size="small"
+                      sx={{ fontSize: '0.6rem', backgroundColor: '#E8F5EE', color: '#006B3C', cursor: 'pointer', '&:hover': { backgroundColor: '#D0EBD8' } }}
+                    />
+                  </Link>
+                ) : (
+                  <Chip key={fw} label={fw} size="small"
+                    sx={{ fontSize: '0.6rem', backgroundColor: '#E8F5EE', color: '#006B3C' }}
+                  />
+                );
+              })}
             </Box>
 
             {cluster.example_claims?.length > 0 && (
@@ -115,7 +188,14 @@ export default function TaxonomyPanel({ apiKey }) {
       ))}
 
       <Typography variant="caption" sx={{ color: '#4A6550', display: 'block', mt: 1.5 }}>
-        Cook et al. (2022) · Touzel et al. (2023) · Stoddart & Tindall (2020)
+        {['cook2022', 'coan2021', 'lamb2020'].map(getRef).filter(Boolean).map((ref, i) => (
+          <React.Fragment key={ref.id}>
+            {i > 0 && ' · '}
+            <Link href={ref.url} target="_blank" rel="noopener noreferrer" underline="hover" sx={{ color: '#006B3C' }}>
+              {ref.shortCite}
+            </Link>
+          </React.Fragment>
+        ))}
       </Typography>
     </Box>
   );

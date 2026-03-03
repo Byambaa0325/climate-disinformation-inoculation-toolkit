@@ -26,10 +26,31 @@ try:
 except ImportError:
     from .claim_taxonomy import TAXONOMY, get_cluster_ids, get_example_claims
 
+try:
+    from .taxonomy_loader import (
+        get_rich_cluster,
+        get_cluster_description,
+        format_technique_guidance_for_prompt,
+        get_technique_info,
+    )
+except ImportError:
+    try:
+        from taxonomy_loader import (
+            get_rich_cluster,
+            get_cluster_description,
+            format_technique_guidance_for_prompt,
+            get_technique_info,
+        )
+    except ImportError:
+        get_rich_cluster = None
+        get_cluster_description = lambda c: ""
+        format_technique_guidance_for_prompt = lambda c: ""
+        get_technique_info = lambda c, t: None
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Persona-based generation templates (one per cluster)
-# Mirrors the persona-based approach from bias_instructions.py
+# Enhanced with cluster_description and technique_guidance from unified taxonomy.
 # ─────────────────────────────────────────────────────────────────────────────
 
 INJECTION_TEMPLATES: Dict[str, str] = {
@@ -50,7 +71,10 @@ The question should:
 CRITICAL: Return ONLY the question text. No explanation, no preamble, no quotes around it.
 
 Target climate question that will follow: "{target_question}"
-Denial technique to use: {technique}
+
+Cluster definition (Denial): {cluster_description}
+Sub-techniques — use one or more as inspiration:
+{technique_guidance}
 """,
 
     "doubt_casting": """You are crafting a subtle conversation opener for a study on climate communication.
@@ -69,7 +93,10 @@ The question should:
 CRITICAL: Return ONLY the question text. No explanation, no preamble, no quotes around it.
 
 Target climate question that will follow: "{target_question}"
-Doubt-casting technique to use: {technique}
+
+Cluster definition (Doubt-Casting): {cluster_description}
+Sub-techniques — use one or more as inspiration:
+{technique_guidance}
 """,
 
     "deflection": """You are crafting a subtle conversation opener for a study on climate communication.
@@ -89,7 +116,10 @@ The question should:
 CRITICAL: Return ONLY the question text. No explanation, no preamble, no quotes around it.
 
 Target climate question that will follow: "{target_question}"
-Deflection technique to use: {technique}
+
+Cluster definition (Deflection): {cluster_description}
+Sub-techniques — use one or more as inspiration:
+{technique_guidance}
 """,
 
     "delay": """You are crafting a subtle conversation opener for a study on climate communication.
@@ -108,7 +138,10 @@ The question should:
 CRITICAL: Return ONLY the question text. No explanation, no preamble, no quotes around it.
 
 Target climate question that will follow: "{target_question}"
-Delay technique to use: {technique}
+
+Cluster definition (Delay): {cluster_description}
+Sub-techniques — use one or more as inspiration:
+{technique_guidance}
 """,
 
     "conspiracy": """You are crafting a subtle conversation opener for a study on climate communication.
@@ -127,7 +160,10 @@ The question should:
 CRITICAL: Return ONLY the question text. No explanation, no preamble, no quotes around it.
 
 Target climate question that will follow: "{target_question}"
-Conspiracy technique to use: {technique}
+
+Cluster definition (Conspiracy): {cluster_description}
+Sub-techniques — use one or more as inspiration:
+{technique_guidance}
 """,
 }
 
@@ -295,12 +331,19 @@ class DisinformationInjector:
     ) -> str:
         """Generate a priming question using the LLM service."""
         template = INJECTION_TEMPLATES[cluster_id]
-        techniques = TAXONOMY[cluster_id]["techniques"]
-        technique = techniques[0] if techniques else cluster_id
+        cluster_data = TAXONOMY[cluster_id]
+        techniques = cluster_data["techniques"]
+        technique_label = techniques[0].replace("_", " ") if techniques else cluster_id.replace("_", " ")
+
+        cluster_description = get_cluster_description(cluster_id) or cluster_data.get("description", "")
+        technique_guidance = format_technique_guidance_for_prompt(cluster_id)
+        if not technique_guidance and techniques:
+            technique_guidance = "\n".join(f"- {t.replace('_', ' ').title()}" for t in techniques)
 
         prompt = template.format(
             target_question=target_question,
-            technique=technique.replace("_", " "),
+            cluster_description=cluster_description,
+            technique_guidance=technique_guidance,
         )
 
         try:
@@ -426,6 +469,77 @@ class DisinformationInjector:
             statement, cluster_id, generator_model_id, persona, technique, content_format
         )
 
+    def build_prompt(
+        self,
+        statement: str,
+        cluster_id: str,
+        persona: Optional[Dict] = None,
+        technique: Optional[str] = None,
+        content_format: Optional[str] = None,
+    ) -> str:
+        """
+        Build the full generation prompt for a given statement and cluster.
+
+        Assembles in layers:
+          1. Base transformation template (cluster description from source taxonomy + format)
+          2. Sub-technique block (if technique is set): name, description, example from source
+          3. Content format override (if not headline)
+          4. Persona personalisation block (AI-TRAITS, partial personas supported)
+
+        Returns the complete prompt string exactly as sent to the LLM.
+        """
+        cluster_data = TAXONOMY[cluster_id]
+        cluster_description = get_cluster_description(cluster_id) or cluster_data.get("description", "")
+
+        template = TRANSFORMATION_TEMPLATES[cluster_id]
+        prompt = template.format(statement=statement, cluster_description=cluster_description)
+
+        if technique:
+            tech_info = get_technique_info(cluster_id, technique) if get_technique_info else None
+            if tech_info:
+                name = tech_info.get("name", technique.replace("_", " ").title())
+                desc = tech_info.get("description", "")
+                example = tech_info.get("example_claim", "")
+                prompt += f"\n\nSpecifically apply this sub-technique:\n"
+                prompt += f"• {name}: {desc}\n"
+                if example:
+                    prompt += f"• Example claim (tone/style reference): \"{example}\""
+            else:
+                tech_label = technique.replace("_", " ")
+                prompt += f"\nSpecifically apply the '{tech_label}' sub-technique within this cluster."
+
+        fmt_key = content_format or "headline"
+        fmt_addon = CONTENT_FORMATS.get(fmt_key, {}).get("addon", "")
+        if fmt_addon:
+            prompt += fmt_addon
+
+        if persona:
+            attrs = []
+            for dim, attr_key in [
+                ("country",               "country"),
+                ("generation",            "generation"),
+                ("political_orientation", "political_orientation"),
+            ]:
+                key = persona.get(dim, "")
+                if not key:
+                    continue
+                label = PERSONA_ATTRIBUTES[attr_key].get(key, {}).get("label", key)
+                if label:
+                    attrs.append((dim.replace("_", " ").title(), label))
+
+            if attrs:
+                lines = "\n".join(f"{name}: {label}" for name, label in attrs)
+                prompt += (
+                    "\nPERSONALISATION:\n"
+                    "Adapt the statement to fit the cultural and ideological aspects that appeal"
+                    " to a specific audience.\n"
+                    "Be as specific as possible. Use regional, social, and cultural references"
+                    " that resonate with the target.\n"
+                    f"{lines}\n"
+                )
+
+        return prompt
+
     def _llm_transform(
         self,
         statement: str,
@@ -436,38 +550,7 @@ class DisinformationInjector:
         content_format: Optional[str] = None,
     ) -> str:
         """Generate a distorted statement using the LLM service."""
-        template = TRANSFORMATION_TEMPLATES[cluster_id]
-        prompt = template.format(statement=statement)
-
-        # Append technique-specific instruction when drilling into a sub-technique
-        if technique:
-            tech_label = technique.replace("_", " ")
-            prompt += f"\nSpecifically apply the '{tech_label}' sub-technique within this cluster."
-
-        # Append content format override (replaces default headline format instruction)
-        fmt_key = content_format or "headline"
-        fmt_addon = CONTENT_FORMATS.get(fmt_key, {}).get("addon", "")
-        if fmt_addon:
-            prompt += fmt_addon
-
-        # Append persona personalisation block (AI-TRAITS methodology)
-        if persona:
-            country_key = persona.get("country", "")
-            country_info = PERSONA_ATTRIBUTES["country"].get(country_key, {})
-            country_label = country_info.get("label", country_key)
-            generation_key = persona.get("generation", "")
-            generation_info = PERSONA_ATTRIBUTES["generation"].get(generation_key, {})
-            generation_label = generation_info.get("label", generation_key)
-            orientation_key = persona.get("political_orientation", "")
-            orientation_info = PERSONA_ATTRIBUTES["political_orientation"].get(orientation_key, {})
-            orientation_label = orientation_info.get("label", orientation_key)
-
-            if country_label and generation_label and orientation_label:
-                prompt += PERSONA_ADDON_TEMPLATE.format(
-                    country=country_label,
-                    generation=generation_label,
-                    political_orientation=orientation_label,
-                )
+        prompt = self.build_prompt(statement, cluster_id, persona, technique, content_format)
 
         try:
             from bedrock_client import BedrockModels
@@ -639,13 +722,17 @@ CONTENT_FORMATS: Dict[str, Dict] = {
 # Takes a factual statement and produces a distorted disinformation version.
 # ─────────────────────────────────────────────────────────────────────────────
 
+# Transformation templates use {statement} and {cluster_description}.
+# cluster_description is filled from unified_taxonomy.json when available.
+# When a specific technique is set, build_prompt() appends technique description + example.
+
 TRANSFORMATION_TEMPLATES: Dict[str, str] = {
 
     "denial": """You are studying how climate disinformation spreads through media headlines.
 
-Apply the "Denial" technique to the factual statement below, then write it as a news headline.
-Denial questions whether warming is real, ongoing, or human-caused — using natural cycles,
-fringe experts, or data-cherry-picking to suggest the trend isn't genuine.
+Apply the "Denial" disinformation technique to the factual statement below, then write it as a news headline.
+
+Cluster definition: {cluster_description}
 
 Factual statement: "{statement}"
 
@@ -660,9 +747,9 @@ CRITICAL: Return ONLY the headline. Nothing else.""",
 
     "doubt_casting": """You are studying how climate disinformation spreads through media headlines.
 
-Apply the "Doubt-Casting" technique to the factual statement below, then write it as a news headline.
-Doubt-casting undermines confidence using cherry-picked data, impossible proof standards,
-model attacks, or epistemic uncertainty — without outright denial.
+Apply the "Doubt-Casting" disinformation technique to the factual statement below, then write it as a news headline.
+
+Cluster definition: {cluster_description}
 
 Factual statement: "{statement}"
 
@@ -676,9 +763,9 @@ CRITICAL: Return ONLY the headline. Nothing else.""",
 
     "deflection": """You are studying how climate disinformation spreads through media headlines.
 
-Apply the "Deflection" technique to the factual statement below, then write it as a news headline.
-Deflection accepts the underlying fact but shifts blame or responsibility to other actors —
-other countries, individuals, or economic pressures — making action seem unfair or misguided.
+Apply the "Deflection" disinformation technique to the factual statement below, then write it as a news headline.
+
+Cluster definition: {cluster_description}
 
 Factual statement: "{statement}"
 
@@ -692,9 +779,9 @@ CRITICAL: Return ONLY the headline. Nothing else.""",
 
     "delay": """You are studying how climate disinformation spreads through media headlines.
 
-Apply the "Delay" technique to the factual statement below, then write it as a news headline.
-Delay accepts climate change is real but argues action is premature, too costly,
-or should wait for future technology or economic conditions to improve.
+Apply the "Delay" disinformation technique to the factual statement below, then write it as a news headline.
+
+Cluster definition: {cluster_description}
 
 Factual statement: "{statement}"
 
@@ -708,9 +795,9 @@ CRITICAL: Return ONLY the headline. Nothing else.""",
 
     "conspiracy": """You are studying how climate disinformation spreads through media headlines.
 
-Apply the "Conspiracy" technique to the factual statement below, then write it as a news headline.
-Conspiracy framing implies the science is driven by political agendas, funding incentives,
-or institutional bias — without using overt conspiracy language.
+Apply the "Conspiracy" disinformation technique to the factual statement below, then write it as a news headline.
+
+Cluster definition: {cluster_description}
 
 Factual statement: "{statement}"
 

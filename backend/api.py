@@ -334,12 +334,16 @@ def transform_single():
         transformed = injector.transform_statement(
             statement, cluster_id, generator_model_id, persona, technique, content_format
         )
+        prompt_used = injector.build_prompt(
+            statement, cluster_id, persona, technique, content_format
+        )
         return jsonify(sanitize_for_json({
             "transformed_statement": transformed,
             "cluster_id": cluster_id,
             "persona": persona,
             "technique": technique,
             "content_format": content_format,
+            "prompt_used": prompt_used,
         }))
     except Exception as e:
         logger.error("transform_single failed: %s\n%s", e, traceback.format_exc())
@@ -388,6 +392,12 @@ def expand_graph():
         logger.error("transform_all_statements failed: %s\n%s", e, traceback.format_exc())
         transformations = {cid: f"[Transformation failed: {e}]" for cid in TAXONOMY}
 
+    # Build prompts per cluster (always available, even in rule-based fallback)
+    prompts = {
+        cid: injector.build_prompt(statement, cid, content_format=content_format)
+        for cid in TAXONOMY
+    }
+
     # Build graph nodes
     root_id = f"root_{uuid.uuid4().hex[:8]}"
     nodes = [
@@ -431,6 +441,7 @@ def expand_graph():
                 "description": cluster_data["description"],
                 "original_statement": statement,
                 "transformed_statement": transformed,
+                "prompt_used": prompts.get(cluster_id, ""),
                 "techniques": cluster_data["techniques"],
                 "counter_points": cluster_data["counter_talking_points"],
                 "node_type": "disinformed",

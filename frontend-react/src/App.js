@@ -14,7 +14,7 @@ import {
   Box, TextField, Button, Paper, Typography, Chip, Dialog,
   DialogTitle, DialogContent, DialogActions, CircularProgress,
   IconButton, ToggleButtonGroup, ToggleButton, Tabs, Tab, Divider,
-  FormControl, Select, MenuItem,
+  FormControl, Select, MenuItem, Collapse,
 } from '@mui/material';
 import { Close, Create, Search, Shield, TouchApp } from '@mui/icons-material';
 import axios from 'axios';
@@ -131,6 +131,8 @@ function App() {
   const [rightTab, setRightTab] = useState(0);
   const [viewMode, setViewMode] = useState('input');
   const [mainPage, setMainPage] = useState('lab'); // 'lab' | 'methodology'
+  const [promptOpen, setPromptOpen] = useState(false);
+  const [howToOpen, setHowToOpen] = useState(false);
 
   // Model selection
   const [availableModels, setAvailableModels] = useState([]);
@@ -153,6 +155,56 @@ function App() {
 
   const nodesRef = useRef(nodes);
   useEffect(() => { nodesRef.current = nodes; }, [nodes]);
+
+  const edgesRef = useRef(edges);
+  useEffect(() => { edgesRef.current = edges; }, [edges]);
+
+  // Positions of all nodes at the moment a drag begins
+  const dragStartPositions = useRef({});
+
+  // BFS: return all descendant node IDs of a given node via directed edges
+  const getDescendants = useCallback((nodeId) => {
+    const result = [];
+    const queue = [nodeId];
+    const visited = new Set([nodeId]);
+    while (queue.length) {
+      const cur = queue.shift();
+      for (const e of edgesRef.current) {
+        if (e.source === cur && !visited.has(e.target)) {
+          visited.add(e.target);
+          result.push(e.target);
+          queue.push(e.target);
+        }
+      }
+    }
+    return result;
+  }, []);
+
+  const handleNodeDragStart = useCallback((_, node) => {
+    const positions = {};
+    nodesRef.current.forEach((n) => { positions[n.id] = { ...n.position }; });
+    dragStartPositions.current = positions;
+  }, []);
+
+  const handleNodeDrag = useCallback((_, node) => {
+    const start = dragStartPositions.current[node.id];
+    if (!start) return;
+    const dx = node.position.x - start.x;
+    const dy = node.position.y - start.y;
+    if (dx === 0 && dy === 0) return;
+
+    const descendants = getDescendants(node.id);
+    if (!descendants.length) return;
+
+    setNodes((nds) =>
+      nds.map((n) => {
+        if (!descendants.includes(n.id)) return n;
+        const orig = dragStartPositions.current[n.id];
+        if (!orig) return n;
+        return { ...n, position: { x: orig.x + dx, y: orig.y + dy } };
+      })
+    );
+  }, [getDescendants]); // eslint-disable-line
 
   // Custom node types (stable reference)
   const nodeTypes = useMemo(() => ({
@@ -223,8 +275,60 @@ function App() {
         labelStyle: { fontSize: 10, fill: UN.textMuted },
       }));
 
-      setNodes(rfNodes);
-      setEdges(rfEdges);
+      // Spawn potential technique child nodes for every initial cluster node
+      const potentialNodes = [];
+      const potentialEdges = [];
+      const POT_STEP = 220;
+      const POT_SPREAD = 200;
+
+      rfNodes.forEach((n) => {
+        if (n.data?.node_type !== 'disinformed') return;
+        const { cluster_id } = n.data;
+        const color = CLUSTER_COLORS[cluster_id] || '#555';
+        const techniques = (CLUSTER_TECHNIQUES[cluster_id] || []).slice(0, 3);
+
+        // Radial direction: from root (0,0) to this node
+        const dist = Math.sqrt(n.position.x ** 2 + n.position.y ** 2) || 1;
+        const nx = n.position.x / dist;
+        const ny = n.position.y / dist;
+
+        techniques.forEach((tech, i) => {
+          const spread = (i - 1) * POT_SPREAD;
+          const potId = `pot_${n.id}_${tech}`;
+          potentialNodes.push({
+            id: potId,
+            type: 'potential',
+            position: {
+              x: Math.round(n.position.x + nx * POT_STEP + (-ny) * spread),
+              y: Math.round(n.position.y + ny * POT_STEP + nx * spread),
+            },
+            data: {
+              label: tech.replace(/_/g, ' '),
+              technique_label: tech.replace(/_/g, ' '),
+              display_name: n.data.display_name,
+              cluster_id,
+              technique: tech,
+              original_statement: n.data.original_statement,
+              parent_transformed: n.data.transformed_statement,
+              persona: null,
+              counter_points: n.data.counter_points,
+              node_type: 'potential',
+              isPotential: true,
+            },
+            style: nodeStyle(color, true),
+          });
+          potentialEdges.push({
+            id: `edge_${n.id}_${potId}`,
+            source: n.id,
+            target: potId,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            style: { strokeWidth: 1, stroke: color, strokeDasharray: '4,3', opacity: 0.6 },
+          });
+        });
+      });
+
+      setNodes([...rfNodes, ...potentialNodes]);
+      setEdges([...rfEdges, ...potentialEdges]);
     } catch (err) {
       console.error('Graph expansion failed:', err);
       alert(`Failed to generate transformations: ${err.response?.data?.error || err.message}`);
@@ -261,10 +365,16 @@ function App() {
     }));
   };
 
-  // Drag start from persona chip — carry the composed persona
+  // Drag start from a single category chip — carry only that attribute (singular persona)
   const handleChipDragStart = (e, category, key) => {
-    const composedPersona = { ...selectedPersona, [category]: key };
-    e.dataTransfer.setData('persona_chip', JSON.stringify(composedPersona));
+    const singularPersona = { country: null, generation: null, political_orientation: null, [category]: key };
+    e.dataTransfer.setData('persona_chip', JSON.stringify(singularPersona));
+    e.dataTransfer.effectAllowed = 'copy';
+  };
+
+  // Drag start from format chip — carry the format key
+  const handleFormatChipDragStart = (e, formatKey) => {
+    e.dataTransfer.setData('format_chip', formatKey);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
@@ -288,12 +398,11 @@ function App() {
   const handleDrop = useCallback(async (e) => {
     e.preventDefault();
     setDragOverNodeId(null);
-    const raw = e.dataTransfer.getData('persona_chip');
-    if (!raw || !rfInstance) return;
+    if (!rfInstance) return;
 
-    const persona = JSON.parse(raw);
-    // Need at least one attribute
-    if (!persona.country && !persona.generation && !persona.political_orientation) return;
+    const personaRaw = e.dataTransfer.getData('persona_chip');
+    const formatKey  = e.dataTransfer.getData('format_chip');
+    if (!personaRaw && !formatKey) return;
 
     const pos = rfInstance.screenToFlowPosition({ x: e.clientX, y: e.clientY });
     const targetNode = nodesRef.current.find(
@@ -301,15 +410,22 @@ function App() {
         pos.x >= n.position.x - 10 && pos.x <= n.position.x + 210 &&
         pos.y >= n.position.y - 10 && pos.y <= n.position.y + 130
     );
-
     if (!targetNode) return;
-    await handlePersonaDropExpand(targetNode, persona);
+
+    if (personaRaw) {
+      const persona = JSON.parse(personaRaw);
+      if (persona.country || persona.generation || persona.political_orientation) {
+        await handlePersonaDropExpand(targetNode, persona);
+      }
+    } else if (formatKey) {
+      await handleFormatDropExpand(targetNode, formatKey);
+    }
   }, [rfInstance]); // eslint-disable-line
 
   // ── Persona drop expansion: creates persona node + 3 potential technique children ──
 
   const handlePersonaDropExpand = async (targetNode, persona) => {
-    const { cluster_id, original_statement, counter_points, description } = targetNode.data;
+    const { cluster_id, original_statement, transformed_statement: parentTransformed, counter_points, description } = targetNode.data;
     if (!cluster_id || !original_statement) return;
 
     const parentId = targetNode.id;
@@ -371,22 +487,25 @@ function App() {
       labelStyle: { fontSize: 9, fill: UN.textMuted },
     };
 
-    setNodes((nds) => [...nds, placeholderNode]);
-    setEdges((eds) => [...eds, personaEdge]);
+    // Remove any initial potential technique nodes that were children of this cluster node,
+    // since the persona node will spawn its own technique children.
+    setNodes((nds) => [...nds.filter((n) => !n.id.startsWith(`pot_${parentId}_`)), placeholderNode]);
+    setEdges((eds) => [...eds.filter((e) => !e.id.startsWith(`edge_${parentId}_pot_`)), personaEdge]);
     setExpandingNodeId(personaNodeId);
 
     try {
       const res = await axios.post(
         `${API_BASE_URL}/transform`,
-        { statement: original_statement, cluster_id, persona, use_llm: true, generator_model_id: selectedModel, content_format: selectedFormat },
+        { statement: (parentTransformed && parentTransformed !== '…generating…') ? parentTransformed : original_statement, cluster_id, persona, use_llm: true, generator_model_id: selectedModel, content_format: selectedFormat },
         getAxiosConfig(apiKey)
       );
       const transformed = res.data.transformed_statement;
+      const promptUsed = res.data.prompt_used || '';
 
       // Update placeholder with real content
       setNodes((nds) => nds.map((n) =>
         n.id === personaNodeId
-          ? { ...n, data: { ...n.data, transformed_statement: transformed } }
+          ? { ...n, data: { ...n.data, transformed_statement: transformed, prompt_used: promptUsed } }
           : n
       ));
 
@@ -445,6 +564,99 @@ function App() {
     }
   };
 
+  // ── Format chip drop: re-transform the node's content in a different format ──
+
+  const handleFormatDropExpand = async (targetNode, formatKey) => {
+    const { cluster_id, original_statement, transformed_statement, counter_points, description, persona } = targetNode.data;
+    if (!cluster_id) return;
+
+    const parentId = targetNode.id;
+    const parentPos = targetNode.position;
+    const color = CLUSTER_COLORS[cluster_id] || '#555';
+    const formatLabel = contentFormats?.[formatKey]?.label || formatKey;
+
+    // Direction-aware positioning (same radial expansion as persona)
+    const rootNode = nodesRef.current.find((n) => n.data?.node_type === 'root');
+    const rootPos = rootNode?.position || { x: 0, y: 0 };
+    const dx = parentPos.x - rootPos.x;
+    const dy = parentPos.y - rootPos.y;
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const nx = dx / dist;
+    const ny = dy / dist;
+
+    const fmtNodeId = `fmt_${parentId}_${formatKey}_${Date.now()}`;
+    const fmtPos = {
+      x: Math.round(parentPos.x + nx * 250),
+      y: Math.round(parentPos.y + ny * 250),
+    };
+
+    const placeholderNode = {
+      id: fmtNodeId,
+      type: 'disinformed',
+      position: fmtPos,
+      data: {
+        label: formatLabel,
+        display_name: `${targetNode.data.display_name || ''} · ${formatLabel}`,
+        cluster_id,
+        description,
+        original_statement,
+        transformed_statement: '…generating…',
+        counter_points,
+        persona: persona || null,
+        format: formatKey,
+        format_label: formatLabel,
+        node_type: 'format',
+        isPotential: false,
+      },
+      style: nodeStyle(color, false),
+    };
+
+    const fmtEdge = {
+      id: `edge_${parentId}_${fmtNodeId}`,
+      source: parentId,
+      target: fmtNodeId,
+      label: formatLabel,
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { strokeWidth: 1.5, stroke: color, strokeDasharray: '5,3' },
+      labelStyle: { fontSize: 9, fill: UN.textMuted },
+    };
+
+    setNodes((nds) => [...nds, placeholderNode]);
+    setEdges((eds) => [...eds, fmtEdge]);
+    setExpandingNodeId(fmtNodeId);
+
+    // Re-transform using the source node's content (already distorted) in the new format
+    const inputStatement = transformed_statement && transformed_statement !== '…generating…'
+      ? transformed_statement
+      : original_statement;
+
+    try {
+      const res = await axios.post(
+        `${API_BASE_URL}/transform`,
+        {
+          statement: inputStatement,
+          cluster_id,
+          persona: persona || null,
+          use_llm: true,
+          generator_model_id: selectedModel,
+          content_format: formatKey,
+        },
+        getAxiosConfig(apiKey)
+      );
+      setNodes((nds) => nds.map((n) =>
+        n.id === fmtNodeId
+          ? { ...n, data: { ...n.data, transformed_statement: res.data.transformed_statement, prompt_used: res.data.prompt_used || '' } }
+          : n
+      ));
+    } catch (err) {
+      alert(`Format expansion failed: ${err.response?.data?.error || err.message}`);
+      setNodes((nds) => nds.filter((n) => n.id !== fmtNodeId));
+      setEdges((eds) => eds.filter((ed) => ed.target !== fmtNodeId));
+    } finally {
+      setExpandingNodeId(null);
+    }
+  };
+
   // ── Click on dashed potential technique node → expand it ───────────────────
 
   const handlePotentialExpand = async (potNode) => {
@@ -476,6 +688,7 @@ function App() {
         getAxiosConfig(apiKey)
       );
       const transformed = res.data.transformed_statement;
+      const promptUsed = res.data.prompt_used || '';
 
       setNodes((nds) => nds.map((n) =>
         n.id === potNode.id
@@ -485,6 +698,7 @@ function App() {
               data: {
                 ...n.data,
                 transformed_statement: transformed,
+                prompt_used: promptUsed,
                 isPotential: false,
                 node_type: 'technique',
               },
@@ -515,6 +729,7 @@ function App() {
     }
     setSelectedNode(node);
     setDialogOpen(true);
+    setPromptOpen(false);
   }, [expandingNodeId]); // eslint-disable-line
 
   // Update drag-over node border styling
@@ -600,6 +815,43 @@ function App() {
         <>
         {/* ── Left Panel ── */}
         <Box sx={{ width: 290, flexShrink: 0, p: 1.5, overflowY: 'auto', backgroundColor: UN.panelBg, borderRight: `1px solid ${UN.border}` }}>
+
+          {/* How to use */}
+          <Box sx={{ mb: 1.5, border: `1px solid ${UN.border}`, borderRadius: 1, overflow: 'hidden' }}>
+            <Box
+              onClick={() => setHowToOpen((o) => !o)}
+              sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1.25, py: 0.75, cursor: 'pointer', backgroundColor: howToOpen ? UN.bg : 'transparent', '&:hover': { backgroundColor: UN.bg }, transition: 'background 0.15s' }}
+            >
+              <Typography variant="caption" fontWeight={700} sx={{ color: UN.primaryDk, fontSize: '0.72rem', letterSpacing: 0.3 }}>
+                How to use
+              </Typography>
+              <Typography sx={{ fontSize: '0.65rem', color: UN.textMuted, lineHeight: 1 }}>
+                {howToOpen ? '▾' : '▸'}
+              </Typography>
+            </Box>
+            <Collapse in={howToOpen}>
+              <Box sx={{ px: 1.25, pb: 1.25, pt: 0.25 }}>
+                {[
+                  { step: '1', text: 'Enter a factual climate statement in the text box, or switch to News to pick a real headline.' },
+                  { step: '2', text: 'Choose a content format (Headline, Tweet, Facebook…) to control how the output is written.' },
+                  { step: '3', text: 'Click Transform Statement — five cluster nodes appear, each showing a distorted version.' },
+                  { step: '4', text: 'Click any node to see the technique, original vs. transformed text, counter-talking points, and the generation prompt.' },
+                  { step: '5', text: 'Select persona chips (country · generation · politics), then drag onto a node to generate a demographic-targeted variant.' },
+                  { step: '6', text: 'Drag a format chip onto any node to re-package that node\'s content in a different channel (e.g. turn a headline into a tweet).' },
+                  { step: '7', text: 'Click a dashed potential node to drill into a specific sub-technique.' },
+                  { step: '8', text: 'Drag any node to reposition it — its children move with it.' },
+                ].map(({ step, text }) => (
+                  <Box key={step} sx={{ display: 'flex', gap: 0.75, mb: 0.85, alignItems: 'flex-start' }}>
+                    <Box sx={{ minWidth: 16, height: 16, borderRadius: '50%', backgroundColor: UN.primary, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, mt: 0.1 }}>
+                      <Typography sx={{ fontSize: '0.52rem', color: 'white', fontWeight: 700, lineHeight: 1 }}>{step}</Typography>
+                    </Box>
+                    <Typography variant="caption" sx={{ color: UN.textMuted, lineHeight: 1.55, fontSize: '0.68rem' }}>{text}</Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Collapse>
+          </Box>
+
           <ToggleButtonGroup
             value={inputMode}
             exclusive
@@ -643,9 +895,12 @@ function App() {
               <Divider sx={{ my: 1.25, borderColor: UN.border }} />
 
               {/* ── Content Format Chips ── */}
-              <Typography variant="caption" fontWeight={700} sx={{ color: UN.textMain, fontSize: '0.72rem', display: 'block', mb: 0.6 }}>
-                Format
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.6 }}>
+                <TouchApp sx={{ fontSize: 14, color: UN.textMuted }} />
+                <Typography variant="caption" fontWeight={700} sx={{ color: UN.textMain, fontSize: '0.72rem' }}>
+                  Format — click or drag onto a node
+                </Typography>
+              </Box>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.25 }}>
                 {(contentFormats
                   ? Object.entries(contentFormats)
@@ -657,17 +912,20 @@ function App() {
                       key={key}
                       label={fmt.label}
                       size="small"
+                      draggable
+                      onDragStart={(e) => handleFormatChipDragStart(e, key)}
                       onClick={() => setSelectedFormat(key)}
                       sx={{
                         fontSize: '0.65rem',
                         height: 22,
-                        cursor: 'pointer',
+                        cursor: 'grab',
                         backgroundColor: isSelected ? UN.primaryDk : '#E8F5EE',
                         color: isSelected ? 'white' : UN.primaryDk,
                         border: `1px solid ${isSelected ? UN.primaryDk : UN.border}`,
                         fontWeight: isSelected ? 700 : 400,
                         transition: 'all 0.15s',
-                        '&:hover': { backgroundColor: isSelected ? UN.primary : '#D0EBD8' },
+                        '&:hover': { backgroundColor: isSelected ? UN.primary : '#D0EBD8', transform: 'scale(1.05)' },
+                        '&:active': { cursor: 'grabbing' },
                         '& .MuiChip-label': { px: 0.9 },
                       }}
                     />
@@ -720,11 +978,24 @@ function App() {
                 </Box>
               ))}
 
-              {/* Active persona summary */}
+              {/* Active persona summary — draggable as combined persona */}
               {(selectedPersona.country || selectedPersona.generation || selectedPersona.political_orientation) && (
-                <Box sx={{ mb: 1, p: 0.75, backgroundColor: '#E8F5EE', borderRadius: 1, border: `1px solid ${UN.border}` }}>
+                <Box
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('persona_chip', JSON.stringify(selectedPersona));
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  sx={{
+                    mb: 1, p: 0.75, backgroundColor: '#E8F5EE', borderRadius: 1,
+                    border: `1px solid ${UN.border}`, cursor: 'grab',
+                    '&:active': { cursor: 'grabbing' },
+                    '&:hover': { backgroundColor: '#D0EBD8', borderColor: UN.primary },
+                    transition: 'all 0.15s',
+                  }}
+                >
                   <Typography variant="caption" sx={{ color: UN.textMuted, fontSize: '0.6rem', display: 'block', mb: 0.25 }}>
-                    Active persona (drag any chip to apply)
+                    Combined persona — drag onto a node
                   </Typography>
                   <Box sx={{ display: 'flex', gap: 0.4, flexWrap: 'wrap' }}>
                     {Object.entries(selectedPersona).filter(([, v]) => v).map(([cat, key]) => (
@@ -813,6 +1084,8 @@ function App() {
               onNodeClick={handleNodeClick}
               nodeTypes={nodeTypes}
               onInit={setRfInstance}
+              onNodeDragStart={handleNodeDragStart}
+              onNodeDrag={handleNodeDrag}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -924,6 +1197,39 @@ function App() {
               {selectedNode.data.counter_points?.map((pt, i) => (
                 <Typography key={i} variant="body2" sx={{ mb: 0.75, color: UN.textMuted, pl: 1 }}>• {pt}</Typography>
               ))}
+
+              {selectedNode.data.prompt_used && (
+                <Box sx={{ mt: 2 }}>
+                  <Button
+                    size="small"
+                    variant="text"
+                    onClick={() => setPromptOpen((o) => !o)}
+                    sx={{ fontSize: '0.72rem', color: UN.textMuted, textTransform: 'none', px: 0, mb: 0.5 }}
+                  >
+                    {promptOpen ? '▾' : '▸'} Generation prompt
+                  </Button>
+                  <Collapse in={promptOpen}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 1.25,
+                        backgroundColor: '#F8F8F8',
+                        borderColor: UN.border,
+                        fontFamily: 'monospace',
+                        fontSize: '0.68rem',
+                        color: UN.textMuted,
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-word',
+                        lineHeight: 1.6,
+                        maxHeight: 320,
+                        overflowY: 'auto',
+                      }}
+                    >
+                      {selectedNode.data.prompt_used}
+                    </Paper>
+                  </Collapse>
+                </Box>
+              )}
             </>
           )}
         </DialogContent>
