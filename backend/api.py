@@ -632,6 +632,8 @@ def news_headlines():
 
     source_filter = request.args.get("source", "").strip().lower()
     q = request.args.get("q", "").strip().lower()
+    date_from = request.args.get("date_from", "").strip()  # YYYY-MM-DD
+    date_to = request.args.get("date_to", "").strip()      # YYYY-MM-DD
     page = int(request.args.get("page", 0))
     page_size = min(int(request.args.get("page_size", 20)), 100)
 
@@ -641,6 +643,11 @@ def news_headlines():
     if q:
         filtered = [h for h in filtered
                     if q in h.get("title", "").lower() or q in h.get("description", "").lower()]
+    if date_from:
+        filtered = [h for h in filtered if (h.get("published") or "") >= date_from]
+    if date_to:
+        # date_to is inclusive: compare against date_to + "T23:59:59"
+        filtered = [h for h in filtered if (h.get("published") or "") <= date_to + "T23:59:59"]
 
     total = len(filtered)
     page_items = filtered[page * page_size: (page + 1) * page_size]

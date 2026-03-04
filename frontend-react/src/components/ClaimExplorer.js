@@ -28,6 +28,8 @@ export default function ClaimExplorer({ apiKey, onSelectEntry }) {
   const [filterSource, setFilterSource] = useState('');
   const [searchQ, setSearchQ] = useState('');
   const [debouncedQ, setDebouncedQ] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [page, setPage] = useState(0);
   const [pageSize, setPageSize] = useState(10);
 
@@ -46,6 +48,8 @@ export default function ClaimExplorer({ apiKey, onSelectEntry }) {
       const params = { page, page_size: pageSize };
       if (filterSource) params.source = filterSource;
       if (debouncedQ) params.q = debouncedQ;
+      if (dateFrom) params.date_from = dateFrom;
+      if (dateTo) params.date_to = dateTo;
       const res = await axios.get(`${API_BASE_URL}/news/headlines`, { headers, params });
       setHeadlines(res.data.headlines || []);
       setTotal(res.data.total || 0);
@@ -59,12 +63,12 @@ export default function ClaimExplorer({ apiKey, onSelectEntry }) {
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, filterSource, debouncedQ, apiKey]); // eslint-disable-line
+  }, [page, pageSize, filterSource, debouncedQ, dateFrom, dateTo, apiKey]); // eslint-disable-line
 
   useEffect(() => { fetchHeadlines(); }, [fetchHeadlines]);
 
   // Reset page when filters change
-  useEffect(() => { setPage(0); }, [filterSource, debouncedQ]);
+  useEffect(() => { setPage(0); }, [filterSource, debouncedQ, dateFrom, dateTo]);
 
   return (
     <Box sx={{ p: 1 }}>
@@ -105,7 +109,7 @@ export default function ClaimExplorer({ apiKey, onSelectEntry }) {
 
       {/* Source filter */}
       {sources.length > 0 && (
-        <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
+        <FormControl fullWidth size="small" sx={{ mb: 1 }}>
           <Select
             value={filterSource}
             displayEmpty
@@ -119,6 +123,47 @@ export default function ClaimExplorer({ apiKey, onSelectEntry }) {
           </Select>
         </FormControl>
       )}
+
+      {/* Date range filter */}
+      <Box sx={{ display: 'flex', gap: 0.75, mb: 1.5 }}>
+        <TextField
+          size="small"
+          type="date"
+          label="From"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ max: dateTo || undefined }}
+          sx={{
+            flex: 1,
+            '& .MuiOutlinedInput-root': { fontSize: '0.72rem', '&.Mui-focused fieldset': { borderColor: UN.primary } },
+            '& .MuiInputLabel-root': { fontSize: '0.72rem', '&.Mui-focused': { color: UN.primary } },
+          }}
+        />
+        <TextField
+          size="small"
+          type="date"
+          label="To"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          inputProps={{ min: dateFrom || undefined }}
+          sx={{
+            flex: 1,
+            '& .MuiOutlinedInput-root': { fontSize: '0.72rem', '&.Mui-focused fieldset': { borderColor: UN.primary } },
+            '& .MuiInputLabel-root': { fontSize: '0.72rem', '&.Mui-focused': { color: UN.primary } },
+          }}
+        />
+        {(dateFrom || dateTo) && (
+          <Button
+            size="small"
+            onClick={() => { setDateFrom(''); setDateTo(''); }}
+            sx={{ minWidth: 0, px: 0.75, color: UN.textMuted, fontSize: '0.65rem', textTransform: 'none' }}
+          >
+            Clear
+          </Button>
+        )}
+      </Box>
 
       <Divider sx={{ mb: 1.5, borderColor: UN.border }} />
 

@@ -136,6 +136,18 @@ def fetch_feed(cfg: dict) -> list:
     return articles
 
 
+def _read_existing_gcs() -> list:
+    from google.cloud import storage  # type: ignore
+    try:
+        client = storage.Client()
+        blob = client.bucket(GCS_BUCKET).blob(GCS_OBJECT)
+        if blob.exists():
+            return json.loads(blob.download_as_text())
+    except Exception as exc:
+        print(f"  [WARN] Could not read existing GCS data: {exc}")
+    return []
+
+
 def _write_to_gcs(payload: str) -> None:
     from google.cloud import storage  # type: ignore
     client = storage.Client()
@@ -144,12 +156,25 @@ def _write_to_gcs(payload: str) -> None:
     blob.upload_from_string(payload, content_type="application/json")
 
 
+MAX_ARCHIVE = 5000  # cap to avoid unbounded growth
+
+
 def main(target: int = 110):
     print(f"Fetching extreme-weather climate headlines (target={target})...\n")
 
-    seen: set = set()
-    all_articles: list = []
+    # Load existing archive for cumulative merge
+    if GCS_BUCKET:
+        existing = _read_existing_gcs()
+    elif OUT_FILE.exists():
+        with open(OUT_FILE, "r", encoding="utf-8") as f:
+            existing = json.load(f)
+    else:
+        existing = []
 
+    seen: set = {a["title"].lower().strip() for a in existing}
+    all_articles: list = list(existing)
+
+    new_count = 0
     for cfg in FEEDS:
         for art in fetch_feed(cfg):
             norm = art["title"].lower().strip()
@@ -157,6 +182,7 @@ def main(target: int = 110):
                 continue
             seen.add(norm)
             all_articles.append(art)
+            new_count += 1
 
     def _date_key(a):
         try:
@@ -165,7 +191,7 @@ def main(target: int = 110):
             return datetime.min
 
     all_articles.sort(key=_date_key, reverse=True)
-    all_articles = all_articles[:target]
+    all_articles = all_articles[:MAX_ARCHIVE]
 
     for i, art in enumerate(all_articles):
         art["index"] = i
@@ -175,12 +201,12 @@ def main(target: int = 110):
 
     if GCS_BUCKET:
         _write_to_gcs(payload)
-        print(f"\nSaved {total} headlines to gs://{GCS_BUCKET}/{GCS_OBJECT}")
+        print(f"\nMerged +{new_count} new → {total} total headlines in gs://{GCS_BUCKET}/{GCS_OBJECT}")
     else:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         with open(OUT_FILE, "w", encoding="utf-8") as f:
             f.write(payload)
-        print(f"\nSaved {total} headlines to {OUT_FILE}")
+        print(f"\nMerged +{new_count} new → {total} total headlines in {OUT_FILE}")
 
     counts = {}
     for a in all_articles:
