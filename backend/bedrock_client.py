@@ -30,12 +30,9 @@ class BedrockModels:
     """Available Bedrock models organized by family"""
 
     # Anthropic Claude Series
-    CLAUDE_3_5_SONNET_V2 = "us.anthropic.claude-3-5-sonnet-20241022-v2:0"
     CLAUDE_3_5_HAIKU = "us.anthropic.claude-3-5-haiku-20241022-v1:0"
-    CLAUDE_3_OPUS = "us.anthropic.claude-3-opus-20240229-v1:0"
     CLAUDE_3_SONNET = "us.anthropic.claude-3-sonnet-20240229-v1:0"
     CLAUDE_3_HAIKU = "us.anthropic.claude-3-haiku-20240307-v1:0"
-    CLAUDE_OPUS_4 = "us.anthropic.claude-opus-4-20250514-v1:0"
     CLAUDE_SONNET_4 = "us.anthropic.claude-sonnet-4-20250514-v1:0"
     CLAUDE_SONNET_4_5 = "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
     CLAUDE_HAIKU_4_5 = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
@@ -57,15 +54,6 @@ class BedrockModels:
     NOVA_LITE = "us.amazon.nova-lite-v1:0"
     NOVA_MICRO = "us.amazon.nova-micro-v1:0"
 
-    # Mistral Series
-    PIXTRAL_LARGE = "us.mistral.pixtral-large-2502-v1:0"
-    MISTRAL_LARGE = "mistral.mistral-large-2402-v1:0"
-    MISTRAL_SMALL = "mistral.mistral-small-2402-v1:0"
-    MISTRAL_7B = "mistral.mistral-7b-instruct-v0:2"
-    MIXTRAL_8X7B = "mistral.mixtral-8x7b-instruct-v0:1"
-
-    # DeepSeek Series
-    DEEPSEEK_R1 = "us.deepseek.r1-v1:0"
 
 
 @dataclass
@@ -125,7 +113,7 @@ class BedrockClient:
         )
         self.default_model = default_model or os.getenv(
             "BEDROCK_DEFAULT_MODEL",
-            BedrockModels.CLAUDE_3_5_SONNET_V2
+            BedrockModels.CLAUDE_SONNET_4_5
         )
         self.max_retries = max_retries
         self.retry_delay = retry_delay

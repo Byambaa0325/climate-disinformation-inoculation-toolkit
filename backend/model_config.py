@@ -81,29 +81,11 @@ AVAILABLE_MODELS = {
     },
 
     # AWS Bedrock - Anthropic Claude Series
-    'us.anthropic.claude-3-5-sonnet-20241022-v2:0': {
-        'name': 'Claude 3.5 Sonnet v2',
-        'provider': 'Anthropic (Bedrock)',
-        'category': 'both',
-        'description': 'Latest Claude 3.5 Sonnet, excellent for reasoning and evaluation',
-        'context_window': 200000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
     'us.anthropic.claude-3-5-haiku-20241022-v1:0': {
         'name': 'Claude 3.5 Haiku',
         'provider': 'Anthropic (Bedrock)',
         'category': 'both',
         'description': 'Fast Claude 3.5 model, great for quick tasks',
-        'context_window': 200000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'us.anthropic.claude-3-opus-20240229-v1:0': {
-        'name': 'Claude 3 Opus',
-        'provider': 'Anthropic (Bedrock)',
-        'category': 'both',
-        'description': 'Most capable Claude 3 model',
         'context_window': 200000,
         'recommended_for': ['generation', 'evaluation'],
         'endpoint_type': 'bedrock'
@@ -122,15 +104,6 @@ AVAILABLE_MODELS = {
         'provider': 'Anthropic (Bedrock)',
         'category': 'both',
         'description': 'Fast Claude 3 model',
-        'context_window': 200000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'us.anthropic.claude-opus-4-20250514-v1:0': {
-        'name': 'Claude Opus 4',
-        'provider': 'Anthropic (Bedrock)',
-        'category': 'both',
-        'description': 'Latest Claude Opus 4 model',
         'context_window': 200000,
         'recommended_for': ['generation', 'evaluation'],
         'endpoint_type': 'bedrock'
@@ -284,63 +257,6 @@ AVAILABLE_MODELS = {
         'endpoint_type': 'bedrock'
     },
 
-    # AWS Bedrock - Mistral Series
-    'us.mistral.pixtral-large-2502-v1:0': {
-        'name': 'Pixtral Large',
-        'provider': 'Mistral (Bedrock)',
-        'category': 'both',
-        'description': 'Mistral\'s large vision model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'mistral.mistral-large-2402-v1:0': {
-        'name': 'Mistral Large',
-        'provider': 'Mistral (Bedrock)',
-        'category': 'both',
-        'description': 'Mistral\'s large model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'mistral.mistral-small-2402-v1:0': {
-        'name': 'Mistral Small',
-        'provider': 'Mistral (Bedrock)',
-        'category': 'both',
-        'description': 'Mistral\'s small model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'mistral.mistral-7b-instruct-v0:2': {
-        'name': 'Mistral 7B',
-        'provider': 'Mistral (Bedrock)',
-        'category': 'both',
-        'description': 'Mistral 7B model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-    'mistral.mixtral-8x7b-instruct-v0:1': {
-        'name': 'Mixtral 8x7B',
-        'provider': 'Mistral (Bedrock)',
-        'category': 'both',
-        'description': 'Mixtral 8x7B model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
-
-    # AWS Bedrock - DeepSeek Series
-    'us.deepseek.r1-v1:0': {
-        'name': 'DeepSeek R1',
-        'provider': 'DeepSeek (Bedrock)',
-        'category': 'both',
-        'description': 'DeepSeek R1 reasoning model',
-        'context_window': 128000,
-        'recommended_for': ['generation', 'evaluation'],
-        'endpoint_type': 'bedrock'
-    },
 }
 
 # Default models for each purpose

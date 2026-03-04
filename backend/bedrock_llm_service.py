@@ -84,11 +84,11 @@ class BedrockLLMService:
         # Default to Claude 3.5 Sonnet for generation and evaluation
         self.default_model = default_model or os.getenv(
             "BEDROCK_DEFAULT_MODEL",
-            BedrockModels.CLAUDE_3_5_SONNET_V2
+            BedrockModels.CLAUDE_SONNET_4_5
         )
         self.evaluation_model = evaluation_model or os.getenv(
             "BEDROCK_EVALUATION_MODEL",
-            BedrockModels.CLAUDE_3_5_SONNET_V2
+            BedrockModels.CLAUDE_SONNET_4_5
         )
     
     def _clean_text_output(self, text: str) -> str:
