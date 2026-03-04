@@ -7,3 +7,6 @@ gunicorn>=21.2.0
 
 # Bedrock API integration
 pydantic>=2.0.0
+
+# GCS (used by news headlines endpoint when GCS_BUCKET env is set)
+google-cloud-storage>=2.10.0

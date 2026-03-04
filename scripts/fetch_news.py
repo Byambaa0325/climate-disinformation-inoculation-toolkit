@@ -1,12 +1,16 @@
 """
 Fetch ~100 extreme-weather climate news headlines from free RSS feeds.
-Saves to data/news_headlines.json.
+
+Local mode (default):  saves to data/news_headlines.json
+Cloud mode (GCS):      set GCS_BUCKET env var → writes to gs://<bucket>/news_headlines.json
 
 Usage:
     python scripts/fetch_news.py
+    GCS_BUCKET=my-bucket python scripts/fetch_news.py
 """
 
 import json
+import os
 import re
 import sys
 from datetime import datetime
@@ -19,6 +23,8 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 DATA_DIR = ROOT / "data"
 OUT_FILE = DATA_DIR / "news_headlines.json"
+GCS_BUCKET = os.environ.get("GCS_BUCKET", "")
+GCS_OBJECT = os.environ.get("GCS_OBJECT", "news_headlines.json")
 
 FEEDS = [
     {"source": "BBC Science & Environment",      "url": "http://feeds.bbci.co.uk/news/science_and_environment/rss.xml",       "filter": True},
@@ -130,6 +136,14 @@ def fetch_feed(cfg: dict) -> list:
     return articles
 
 
+def _write_to_gcs(payload: str) -> None:
+    from google.cloud import storage  # type: ignore
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET)
+    blob = bucket.blob(GCS_OBJECT)
+    blob.upload_from_string(payload, content_type="application/json")
+
+
 def main(target: int = 110):
     print(f"Fetching extreme-weather climate headlines (target={target})...\n")
 
@@ -156,12 +170,17 @@ def main(target: int = 110):
     for i, art in enumerate(all_articles):
         art["index"] = i
 
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
-    with open(OUT_FILE, "w", encoding="utf-8") as f:
-        json.dump(all_articles, f, indent=2, ensure_ascii=False)
-
+    payload = json.dumps(all_articles, indent=2, ensure_ascii=False)
     total = len(all_articles)
-    print(f"\nSaved {total} headlines to {OUT_FILE}")
+
+    if GCS_BUCKET:
+        _write_to_gcs(payload)
+        print(f"\nSaved {total} headlines to gs://{GCS_BUCKET}/{GCS_OBJECT}")
+    else:
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        with open(OUT_FILE, "w", encoding="utf-8") as f:
+            f.write(payload)
+        print(f"\nSaved {total} headlines to {OUT_FILE}")
 
     counts = {}
     for a in all_articles:

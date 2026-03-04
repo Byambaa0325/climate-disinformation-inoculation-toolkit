@@ -577,12 +577,45 @@ def get_models():
 # ─────────────────────────────────────────────────────────────────────────────
 
 _NEWS_FILE = Path(__file__).parent.parent / "data" / "news_headlines.json"
+_GCS_BUCKET = os.environ.get("GCS_BUCKET", "")
+_GCS_OBJECT = os.environ.get("GCS_OBJECT", "news_headlines.json")
+
+# Simple in-memory cache: (data, fetched_at_timestamp)
+_news_cache: tuple[list, float] | tuple[None, None] = (None, None)
+_NEWS_CACHE_TTL = 3600  # 1 hour
+
+
+def _load_headlines() -> list:
+    global _news_cache
+    cached_data, cached_at = _news_cache
+    if cached_data is not None and (datetime.utcnow().timestamp() - cached_at) < _NEWS_CACHE_TTL:
+        return cached_data
+
+    if _GCS_BUCKET:
+        try:
+            from google.cloud import storage as gcs  # type: ignore
+            client = gcs.Client()
+            blob = client.bucket(_GCS_BUCKET).blob(_GCS_OBJECT)
+            data = json.loads(blob.download_as_text())
+            _news_cache = (data, datetime.utcnow().timestamp())
+            return data
+        except Exception as exc:
+            logging.warning("GCS headlines read failed, falling back to local: %s", exc)
+
+    if _NEWS_FILE.exists():
+        with open(_NEWS_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        _news_cache = (data, datetime.utcnow().timestamp())
+        return data
+
+    return []
+
 
 @app.route("/api/news/headlines")
 @require_api_key
 def news_headlines():
     """
-    Return climate news headlines from data/news_headlines.json.
+    Return climate news headlines (from GCS or local file).
 
     Query params:
         source (str, optional): Filter by source name
@@ -590,12 +623,12 @@ def news_headlines():
         page (int, default=0)
         page_size (int, default=20)
     """
-    if not _NEWS_FILE.exists():
-        return jsonify({"headlines": [], "total": 0,
-                        "message": "No headlines found. Run: python scripts/fetch_news.py"})
-
-    with open(_NEWS_FILE, "r", encoding="utf-8") as f:
-        all_headlines = json.load(f)
+    all_headlines = _load_headlines()
+    if not all_headlines:
+        msg = ("No headlines found. "
+               + (f"Check gs://{_GCS_BUCKET}/{_GCS_OBJECT}" if _GCS_BUCKET
+                  else "Run: python scripts/fetch_news.py"))
+        return jsonify({"headlines": [], "total": 0, "message": msg})
 
     source_filter = request.args.get("source", "").strip().lower()
     q = request.args.get("q", "").strip().lower()

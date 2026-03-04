@@ -1,0 +1,26 @@
+# Cloud Build — news scraper image
+# Usage: gcloud builds submit --config cloudbuild.scraper.yaml
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-f', 'Dockerfile.scraper', '-t', 'gcr.io/$PROJECT_ID/climate-disinfo-scraper', '.']
+
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/climate-disinfo-scraper']
+
+  # Update the Cloud Run Job to use the new image
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'jobs'
+      - 'update'
+      - 'climate-disinfo-scraper'
+      - '--image'
+      - 'gcr.io/$PROJECT_ID/climate-disinfo-scraper'
+      - '--region'
+      - 'us-central1'
+
+images:
+  - 'gcr.io/$PROJECT_ID/climate-disinfo-scraper'
+
+timeout: '600s'

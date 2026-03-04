@@ -1,0 +1,22 @@
+apiVersion: run.googleapis.com/v1
+kind: Job
+metadata:
+  name: climate-disinfo-scraper
+  annotations:
+    run.googleapis.com/launch-stage: GA
+spec:
+  template:
+    spec:
+      taskCount: 1
+      template:
+        spec:
+          containers:
+            - image: gcr.io/PROJECT_ID/climate-disinfo-scraper
+              env:
+                - name: GCS_BUCKET
+                  value: PROJECT_ID-climate-disinfo-data
+                - name: GCS_OBJECT
+                  value: news_headlines.json
+          timeoutSeconds: 300
+          maxRetries: 2
+          serviceAccountName: climate-disinfo-scraper@PROJECT_ID.iam.gserviceaccount.com
