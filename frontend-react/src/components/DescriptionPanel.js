@@ -151,24 +151,25 @@ export default function DescriptionPanel({ fullPage }) {
           editorially classified as climate-relevant.
         </Para>
         <Para>
-          The focus on extreme weather and environmental events is theoretically
-          motivated. The{' '}
+          The focus on extreme weather and environmental events is a design
+          choice. Extreme events are where climate change is most visible in daily
+          news: IPCC AR6 Working Group I{' '}
+          (<RefLink id="ipccAR6WGI">IPCC, 2021</RefLink>) reports that evidence
+          attributing observed changes in heatwaves, heavy precipitation, and
+          droughts to human influence has strengthened since AR5, and Working
+          Group II (<RefLink id="ipccAR6WGII">IPCC, 2022</RefLink>) documents the
+          resulting impacts, losses, and damages. The{' '}
           <strong style={{ color: UN.textMain }}>IPIE Synthesis Report</strong>{' '}
-          (<RefLink id="ipie2025">IPIE, 2025</RefLink>){' '}
-          — the most comprehensive systematic review of climate information integrity
-          to date — identifies extreme weather events as the domain most susceptible
-          to disinformation, finding that denial and delay narratives cluster
-          disproportionately around high-impact events where attribution science is
-          publicly contested. The IPCC AR6 Working Group I{' '}
-          (<RefLink id="ipccAR6WGI">IPCC, 2021</RefLink>) further establishes that
-          extreme events — heatwaves, floods, and wildfires — represent the frontier
-          where scientific attribution confidence has grown fastest yet the gap
-          between consensus and public understanding remains widest. AR6 Working
-          Group II (<RefLink id="ipccAR6WGII">IPCC, 2022</RefLink>) documents how
-          loss-and-damage framing around extreme events is systematically contested
-          by actors seeking to decouple observed disasters from anthropogenic forcing.
-          Together, these findings make extreme-event coverage the highest-value
-          corpus for studying disinformation distortion in practice.
+          (<RefLink id="ipie2025">IPIE, 2025</RefLink>), a systematic review of 300
+          studies published 2015–2025, finds that coordinated campaigns shape
+          climate narratives, that the scientific consensus is frequently
+          misrepresented in media, and that delay functions as a "new denial".
+          It reviews evidence that technique-based inoculation transfers across
+          topics, notes that results on polarised issues are mixed, and identifies
+          the role of AI in producing and circulating misinformation as an open
+          research need. The report does not rank topics by susceptibility;
+          anchoring the corpus to extreme-event coverage is our choice, not a
+          finding of the review.
         </Para>
       </Section>
 
