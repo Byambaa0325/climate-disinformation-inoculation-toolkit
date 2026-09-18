@@ -1,12 +1,10 @@
 """
 Counter-Messaging Module
 
-Generates prebunking and debunking counter-narratives for climate disinformation.
+Generates prebunking counter-narratives for climate disinformation.
 
 Based on:
   - Inoculation Theory (Cook et al., 2017; van der Linden et al., 2022)
-  - The Debunking Handbook 2020 (Lewandowsky et al.)
-  - 3-Step Debunking Structure: Fact → Myth flag → Fallacy explanation
   - Technique-based prebunking outperforms claim-based prebunking for novel claims
 
 TODO (requires dataset and evaluation):
@@ -84,13 +82,10 @@ PREBUNKING_TEMPLATES: Dict[str, str] = {
 
 class CounterMessagingModule:
     """
-    Generates prebunking and debunking counter-narratives.
+    Generates prebunking counter-narratives.
 
     Prebunking (inoculation): Warn about the manipulation technique *before*
     the user encounters the disinformation. Most effective for novel claims.
-
-    Debunking (correction): Correct a specific false claim after exposure.
-    Uses fact-first framing (Lewandowsky et al., 2021).
     """
 
     def __init__(self, llm_service=None):
@@ -150,69 +145,6 @@ class CounterMessagingModule:
             "method": "rule-based template",
         }
 
-    def generate_debunking(
-        self,
-        claim: str,
-        cluster_id: str,
-        accurate_info: Optional[str] = None,
-        model_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
-        """
-        Generate a debunking correction for a specific climate disinformation claim.
-
-        Uses 3-step structure from Lewandowsky et al. (2021):
-          Step 1: State the FACT (fact-first framing)
-          Step 2: Flag the MYTH as false
-          Step 3: Explain the FALLACY/technique used
-
-        Args:
-            claim: The disinformation claim to debunk
-            cluster_id: Which cluster the claim belongs to
-            accurate_info: Optional ground-truth accurate information
-            model_id: Optional LLM model for enhanced generation
-
-        Returns:
-            Dict with 3-step debunking message and metadata
-        """
-        cluster_data = get_cluster(cluster_id)
-        counter_points = cluster_data.get("counter_talking_points", [])
-
-        if self.llm_service:
-            # TODO: Implement LLM-based debunking
-            # Prompt structure:
-            # "Using the 3-step debunking method (Lewandowsky et al., 2021):
-            #  1. State the accurate fact about [topic]
-            #  2. Briefly flag the following claim as false: [claim]
-            #  3. Explain the [cluster] technique being used
-            #  Keep the correction shorter than the myth. Use fact-first framing."
-            pass
-
-        # Rule-based debunking
-        fact = accurate_info or (counter_points[0] if counter_points else "This claim is not supported by the scientific evidence.")
-        myth_flag = f"The claim '{claim[:100]}{'...' if len(claim) > 100 else ''}' is false or misleading."
-        fallacy = f"This uses the '{cluster_data['display_name']}' disinformation technique: {cluster_data['description']}"
-
-        message = f"{fact}\n\n{myth_flag}\n\n{fallacy}"
-
-        return {
-            "type": "debunking",
-            "cluster_id": cluster_id,
-            "cluster_display_name": cluster_data["display_name"],
-            "original_claim": claim,
-            "message": message,
-            "steps": {
-                "step1_fact": fact,
-                "step2_myth_flag": myth_flag,
-                "step3_fallacy": fallacy,
-            },
-            "counter_talking_points": counter_points,
-            "sources": [
-                "Lewandowsky et al. (2021). The Debunking Handbook 2020.",
-                "IPCC AR6 (2021). Sixth Assessment Report.",
-            ],
-            "method": "rule-based 3-step debunking",
-        }
-
     def get_counter_talking_points(self, cluster_id: str) -> List[str]:
         """Return pre-written counter-talking-points for a cluster."""
         return get_cluster(cluster_id).get("counter_talking_points", [])
@@ -225,12 +157,3 @@ if __name__ == "__main__":
     prebunk = module.generate_prebunking("doubt_casting")
     print(f"Cluster: {prebunk['cluster_display_name']}")
     print(f"Message: {prebunk['message']}")
-
-    print("\n=== DEBUNKING EXAMPLE ===")
-    debunk = module.generate_debunking(
-        claim="Climate models have been consistently wrong, so we shouldn't trust their predictions.",
-        cluster_id="doubt_casting",
-    )
-    print(f"Step 1 (Fact): {debunk['steps']['step1_fact']}")
-    print(f"Step 2 (Myth): {debunk['steps']['step2_myth_flag']}")
-    print(f"Step 3 (Fallacy): {debunk['steps']['step3_fallacy']}")

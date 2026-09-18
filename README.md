@@ -51,7 +51,7 @@ React frontend (ReactFlow graph)
 Flask backend
     ├── DisinformationInjector    ← layered prompt assembly (cluster + technique + persona + format)
     ├── DisinformationDetector    ← rule-based 5-cluster detection
-    ├── CounterMessagingModule    ← prebunking + debunking templates
+    ├── CounterMessagingModule    ← prebunking templates
     └── BedrockLLMService         ← AWS Bedrock via an HTTP proxy
 ```
 
@@ -112,7 +112,6 @@ POST /api/graph/expand                  Statement → 5 cluster variants
 POST /api/transform                     Persona / format / sub-technique variant
 POST /api/graph/evaluate                Detect disinformation techniques in text
 GET  /api/counter/prebunking/<cluster>  Prebunking message
-POST /api/counter/debunking             Fact–myth–fallacy debunking
 ```
 
 ---

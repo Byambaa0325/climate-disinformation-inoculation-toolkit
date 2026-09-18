@@ -107,14 +107,6 @@ def example_4_counter_messaging():
         print(f"  {prebunk['message'][:200]}...")
         print()
 
-        # Debunking (3-step correction)
-        debunk = module.generate_debunking(claim=claim, cluster_id=cluster_id)
-        print(f"Debunking (3-step):")
-        print(f"  Step 1 (Fact): {debunk['steps']['step1_fact'][:100]}...")
-        print(f"  Step 2 (Myth): {debunk['steps']['step2_myth_flag'][:80]}...")
-        print(f"  Step 3 (Fallacy): {debunk['steps']['step3_fallacy'][:80]}...")
-        print()
-
 
 def example_5_example_claims_by_cluster():
     """Example 5: Get example priming questions from the taxonomy."""

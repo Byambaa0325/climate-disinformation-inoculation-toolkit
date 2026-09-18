@@ -1132,7 +1132,6 @@ function App() {
             {rightTab === 1 && (
               <CounterNarrativePanel
                 clusterId={selectedNode?.data?.cluster_id}
-                claim={selectedNode?.data?.transformed_statement}
                 apiKey={apiKey}
               />
             )}
