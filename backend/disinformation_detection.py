@@ -10,7 +10,7 @@ Based on:
   - CARDS v2 taxonomy (Touzel et al., 2023)
   - 4D Framework (Stoddart & Tindall, 2020)
 
-See research/taxonomy_mapping.md for full framework crosswalk.
+See data/unified_taxonomy.json for the full framework crosswalk.
 """
 
 import re

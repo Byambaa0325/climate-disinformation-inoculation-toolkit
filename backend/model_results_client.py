@@ -3,7 +3,7 @@ Model Evaluation Results Client
 
 Provides access to pre-generated model evaluation results.
 These results contain Turn 1 and Turn 2 responses from various models
-tested with the EMGSD dataset.
+tested with the multi-turn dataset.
 """
 
 import json
@@ -18,7 +18,7 @@ class ModelResultsClient:
     Client for accessing model evaluation results.
 
     The results contain responses from various LLMs (Bedrock and Ollama)
-    evaluated on the EMGSD multi-turn bias injection dataset.
+    evaluated on the multi-turn dataset.
 
     Example:
         >>> client = ModelResultsClient()

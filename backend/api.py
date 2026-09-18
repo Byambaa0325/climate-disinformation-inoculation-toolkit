@@ -10,7 +10,7 @@ Provides endpoints for:
 - Model evaluation results access
 
 Designed for Google Cloud Run deployment (AWS Bedrock backend).
-See research/ for taxonomy and methodology documentation.
+See data/unified_taxonomy.json for the taxonomy definition.
 """
 
 from flask import Flask, request, jsonify, send_from_directory, send_file
@@ -66,7 +66,7 @@ except ImportError:
         from counter_messaging import CounterMessagingModule
         from claim_taxonomy import TAXONOMY, get_taxonomy_for_ui
 
-# Security (ported from art-of-biasing-LLM)
+# Security
 try:
     from .security import require_api_key, rate_limit, admin_only, usage_tracker, SecurityConfig
 except ImportError:
@@ -675,7 +675,7 @@ def dataset_stats():
     if not client:
         return jsonify({
             "status": "empty",
-            "message": "Dataset not yet generated. Run notebooks/05_prompt_engineering.ipynb.",
+            "message": "Dataset not yet generated.",
             "total_entries": 0,
         })
     return jsonify(sanitize_for_json(client.get_stats()))

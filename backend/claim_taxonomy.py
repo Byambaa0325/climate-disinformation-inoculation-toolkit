@@ -7,7 +7,7 @@ Merges three established frameworks into 5 clusters:
   - CARDS v2 (Touzel et al., 2023): 11-label hierarchical taxonomy
   - 4D Framework: Deny, Deceive, Deflect, Delay
 
-See research/taxonomy_mapping.md for full crosswalk.
+See data/unified_taxonomy.json for the full crosswalk.
 """
 
 from typing import Dict, List, Any

@@ -2,8 +2,7 @@
 Disinformation Injection Module
 
 Generates multi-turn priming prompts for testing LLM susceptibility to
-climate disinformation. Mirrors the multi-turn bias injection methodology
-from the art-of-biasing-LLM workspace.
+climate disinformation.
 
 Priming Paradigm:
   Turn 1 (Priming)  →  Cluster-specific disinformation-adjacent question

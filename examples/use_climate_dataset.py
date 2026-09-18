@@ -2,7 +2,6 @@
 Climate Disinformation Dataset — Usage Examples
 
 Demonstrates how to use the dataset client and taxonomy.
-See research/datasets_inventory.md for dataset sources.
 """
 
 import sys

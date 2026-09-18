@@ -2,13 +2,10 @@
 Climate Disinformation Dataset Client
 
 Provides access to the climate disinformation multi-turn dataset.
-Dataset schema mirrors the EMGSD multi-turn structure from art-of-biasing-LLM,
-adapted for the 5-cluster unified climate disinformation taxonomy.
+Multi-turn dataset schema organised by the 5-cluster unified climate
+disinformation taxonomy.
 
 Dataset location: data/climate_disinfo_dataset.json
-See research/datasets_inventory.md for data sources and preprocessing.
-
-TODO: Populate dataset by running notebooks/05_prompt_engineering.ipynb
 """
 
 import json
@@ -75,8 +72,7 @@ class ClimateDisinfoDatasetClient:
 
         if not self.dataset_path.exists():
             raise FileNotFoundError(
-                f"Dataset not found at {self.dataset_path}. "
-                "Run notebooks/05_prompt_engineering.ipynb to generate it."
+                f"Dataset not found at {self.dataset_path}."
             )
 
         self._load()
@@ -169,7 +165,7 @@ class ClimateDisinfoDatasetClient:
         if not self.entries:
             return {
                 "total_entries": 0,
-                "status": "empty — run notebooks/05_prompt_engineering.ipynb to populate",
+                "status": "empty",
             }
 
         cluster_counts: Dict[str, int] = {}

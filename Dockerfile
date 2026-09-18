@@ -1,5 +1,4 @@
 # Climate Disinformation Lab — Docker Build
-# Ported from art-of-biasing-LLM Dockerfile pattern
 
 # Stage 1: Build React frontend
 FROM node:18-alpine AS frontend-builder

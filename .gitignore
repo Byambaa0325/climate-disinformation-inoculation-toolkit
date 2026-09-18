@@ -42,3 +42,14 @@ frontend-react/build/
 
 # External datasets (large files — download separately per datasets_inventory.md)
 data/external/
+
+# Local tooling config
+.claude/
+
+# Internal research notes, planning docs and scratch notebooks (not part of the public release)
+research/
+notebooks/
+docs/
+
+# Paper sources
+latex/
