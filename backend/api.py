@@ -5,7 +5,7 @@ Provides endpoints for:
 - Graph-based disinformation analysis (React + ReactFlow frontend)
 - Disinformation detection (rule-based, 5-cluster taxonomy)
 - LLM-based disinformation injection (multi-turn priming)
-- Counter-messaging generation (prebunking + debunking)
+- Counter-messaging generation (prebunking)
 - Dataset exploration (climate disinformation dataset)
 - Model evaluation results access
 
@@ -755,34 +755,6 @@ def prebunking(cluster_id):
     if cluster_id not in TAXONOMY:
         return jsonify({"error": f"Unknown cluster '{cluster_id}'"}), 404
     result = counter_module.generate_prebunking(cluster_id)
-    return jsonify(sanitize_for_json(result))
-
-
-@app.route("/api/counter/debunking", methods=["POST"])
-@require_api_key
-@rate_limit()
-def debunking():
-    """
-    Generate a debunking response for a specific claim.
-
-    Request body:
-        claim (str): The disinformation claim to debunk
-        cluster_id (str): Which cluster the claim belongs to
-        accurate_info (str, optional): Ground-truth accurate information
-    """
-    data = request.get_json()
-    if not data or not data.get("claim") or not data.get("cluster_id"):
-        return jsonify({"error": "Missing 'claim' or 'cluster_id'"}), 400
-
-    cluster_id = data["cluster_id"]
-    if cluster_id not in TAXONOMY:
-        return jsonify({"error": f"Unknown cluster '{cluster_id}'"}), 400
-
-    result = counter_module.generate_debunking(
-        claim=data["claim"],
-        cluster_id=cluster_id,
-        accurate_info=data.get("accurate_info"),
-    )
     return jsonify(sanitize_for_json(result))
 
 

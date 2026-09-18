@@ -271,10 +271,10 @@ export default function DescriptionPanel({ fullPage }) {
       {/* Counter-messaging */}
       <Section title="Counter-Messaging">
         <Para>
-          Each cluster is paired with prebunking and debunking responses grounded in
+          Each cluster is paired with a prebunking response grounded in
           the inoculation literature (<RefLink id="roozenbeek2022">Roozenbeek et al., 2022</RefLink>;{' '}
           <RefLink id="vanderLinden2020">van der Linden et al., 2020</RefLink>). Prebunking warns of the
-          rhetorical technique before exposure; debunking corrects the distorted claim after
+          rhetorical technique before exposure
           (<RefLink id="lewandowsky2021">Lewandowsky et al., 2021</RefLink>).
           Counter talking-points are sourced from peer-reviewed climate literature and
           consensus statements (<RefLink id="cook2013">Cook et al., 2013</RefLink>;{' '}
@@ -314,7 +314,7 @@ export default function DescriptionPanel({ fullPage }) {
         </Para>
         <Para>
           <strong style={{ color: UN.textMain }}>Inoculation efficacy assumptions.</strong>{' '}
-          The prebunking and debunking responses are grounded in published inoculation
+          The prebunking responses are grounded in published inoculation
           research but have not been independently validated for this specific tool or
           content domain. Effect sizes in inoculation studies vary substantially across
           populations, platforms, and message formats (<RefLink id="roozenbeek2022">Roozenbeek et al., 2022</RefLink>).
